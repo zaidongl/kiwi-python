@@ -1,0 +1,7 @@
+- !PlaywrightAgentConfig
+    name: BrowserAgent
+    headless: False # Whether to run the browser in headless mode, default: true
+    browser_type: chromium # Type of browser to use (chromium, firefox, webkit), default: chromium
+    timeout: 30000 # Timeout for browser operations in milliseconds, default: 30000
+    element_repo: web-gui-repo/web-pages.yml # Path to the element repository file
+    base_url: http://localhost:3000 # Base URL for the web application to be tested

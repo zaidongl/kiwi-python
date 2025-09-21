@@ -1,0 +1,13 @@
+Allure:
+  Enabled: false
+  endpoint: http://localhost:8080/api/report
+  test-project: ai-gateway-regression
+  test-suite: @ai-plugins
+  environment: dev
+
+Email:
+  Enabled: false
+  smtp-server: smtp.example.com
+  smtp-port: 587
+  sender-email: sender@gmail.com
+  recipient-emails: recipient1@gmail.com;developer-group@gmail.com;

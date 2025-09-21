@@ -1,0 +1,16 @@
+.venv
+.idea
+src/__pycache__
+src/build
+src/kiwi.egg-info
+examples/real_world_app_reg_tests/__pycache__
+examples/real_world_app_reg_tests/allure-report
+examples/real_world_app_reg_tests/allure-results
+examples/real_world_app_reg_tests/.pytest_cache
+examples/real_world_app_reg_tests/screenshots
+examples/real_world_app_reg_tests/steps/__pycache__
+src/kiwi/__pycache__
+src/kiwi/agents/__pycache__
+tests/__pycache__
+tests/agents/__pycache__
+tests/config/__pycache__
