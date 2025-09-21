@@ -32,3 +32,6 @@ Common reusable BDD test automation framework in python
     ```bash
     allure serve allure-report/
     ```
+
+## Example report:
+![Example report](./docs/images/allure-report.png)
