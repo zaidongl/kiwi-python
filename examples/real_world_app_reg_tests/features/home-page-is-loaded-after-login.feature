@@ -9,3 +9,10 @@ Feature: Home Page is loaded after login
         When "BrowserAgent" type "test-user" into "Login-Page.user-textbox" and "test" into "Login-Page.password-textbox"
         Then "BrowserAgent" clicks "Login-Page.signin-button"
         Then "BrowserAgent" is on "Home-Page"
+
+    Scenario: login with invalid credentials
+        When "BrowserAgent" opens the page "/"
+        Then "BrowserAgent" is on "Login-Page"
+        When "BrowserAgent" type "test-user" into "Login-Page.user-textbox" and "invalid" into "Login-Page.password-textbox"
+        Then "BrowserAgent" clicks "Login-Page.signin-button"
+        Then "BrowserAgent" sees "Username or password is invalid" on "Login-Page.alert-label"

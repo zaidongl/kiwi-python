@@ -21,5 +21,10 @@ def type_text(context, agent_name, user_name, user_textbox, pwd, pwd_textbox):
 def click_element(context, agent_name, element_name):
     context.scenario_context.get_agent(agent_name).click_element(element_name)
 
+@then('"{agent_name}" sees "{text}" on "{element_name}"')
+def see_element(context, agent_name, text, element_name):
+    context.scenario_context.get_agent(agent_name).is_visible(element_name)
+    context.scenario_context.get_agent(agent_name).see_text(element_name, text)
+
 
 

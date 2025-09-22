@@ -3,5 +3,6 @@ Login-Page:
   user-textbox: "#username"
   password-textbox: "#password"
   signin-button: "#root > div > main > div.SignInForm-paper > form > button"
+  alert-label: "#root > div > main > div.SignInForm-paper > div.MuiPaper-root.MuiPaper-elevation.MuiPaper-rounded.MuiPaper-elevation0.MuiAlert-root.MuiAlert-colorError.MuiAlert-standardError.MuiAlert-standard.SignInForm-alertMessage.css-mqjsrg-MuiPaper-root-MuiAlert-root > div.MuiAlert-message.css-1pxa9xg-MuiAlert-message"
 Home-Page:
   root: "#root > div > div > div > div > div:nth-child(2) > div:nth-child(3) > ul > div > a:nth-child(1) > div.MuiListItemText-root.css-tlelie-MuiListItemText-root > span"

@@ -81,3 +81,9 @@ class PlaywrightAgent(Agent):
         else:
             raise Exception("No page is open. Please open a page before interacting with elements.")
 
+    def see_text(self, selector: str, text: str):
+        locator = self.get_locator(selector)
+        if self.page is not None:
+            expect(self.page.locator(locator)).to_have_text(text, timeout=self.config.timeout)
+        else:
+            raise Exception("No page is open. Please open a page before interacting with elements.")
