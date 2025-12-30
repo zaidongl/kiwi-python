@@ -1,6 +1,10 @@
 from behave import *
 import logging
 
+from playwright.sync_api import expect
+
+from kiwi.context.step_result import StepResult
+
 logger = logging.getLogger(__name__)
 
 def login(context, agent_name, user_name, pwd):
@@ -30,6 +34,24 @@ def click_element(context, agent_name, element_name):
 def see_element(context, agent_name, text, element_name):
     context.scenario_context.get_agent(agent_name).is_visible(element_name)
     context.scenario_context.get_agent(agent_name).see_text(element_name, text)
+
+@then('"{agent_name}" sees {count:d} "{element_name}" in {duration:d} milliseconds')
+def see_element_in_timeout(context, agent_name, count, element_name, duration):
+    agent = context.scenario_context.get_agent(agent_name)
+    page = agent.get_page()
+    element_locator = agent.get_locator(element_name)
+    expect(page.locator(element_locator)).to_have_count(count, timeout=duration)
+
+@when('"{agent_name}" type "{text}" into textbox "{textbox}"')
+def type_text_into_textbox(context, agent_name, text, textbox):
+    agent = context.scenario_context.get_agent(agent_name)
+    page = agent.get_page()
+    page.locator(agent.get_locator(textbox)).focus()
+    processed_text = ContextVariableHelper.process_input_string(context.scenario_context, text)
+    if isinstance(processed_text, StepResult):
+        processed_text = processed_text.data
+
+    agent.type_text(textbox, processed_text)
 
 
 

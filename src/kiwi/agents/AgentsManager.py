@@ -1,7 +1,7 @@
 import logging
 
 from kiwi.config.configurator import Configurator
-from kiwi.agents.playwright_agent import PlaywrightAgent
+from kiwi.agents.gui.playwright_agent import PlaywrightAgent
 from kiwi.config.playwright_agent_config import PlaywrightAgentConfig
 from ..config.rest_agent_config import RestAgentConfig
 

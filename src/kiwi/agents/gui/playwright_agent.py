@@ -5,8 +5,8 @@ from playwright.sync_api import sync_playwright, expect
 import yaml
 import logging
 
-from ..agent import Agent
-from ...config.playwright_agent_config import PlaywrightAgentConfig
+from kiwi.agents.agent import Agent
+from kiwi.config.playwright_agent_config import PlaywrightAgentConfig
 
 class PlaywrightAgent(Agent):
     def __init__(self, agent_config: PlaywrightAgentConfig):
@@ -36,6 +36,9 @@ class PlaywrightAgent(Agent):
                 for element_name, selector in elements.items():
                     self.element_repo[f"{page_name}.{element_name}"] = selector
                     self._logger.info(f"Loaded element: {page_name}.{element_name} -> {selector}")
+
+    def get_page(self):
+        return self.page
 
     def get_locator(self, selector: str):
         locator = self.element_repo.get(selector)
