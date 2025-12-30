@@ -8,6 +8,10 @@ from kiwi.agents.playwright_agent import PlaywrightAgent
 
 logger = logging.getLogger(__name__)
 
+def before_all(context: Context):
+    logger.info("Before All:")
+    #do some initialization before all scenarios e.g. login some UI and keep the session
+
 def before_scenario(context, scenario):
     logger.info("Before scenario setup")
     if not hasattr(context, 'scenario_context'):

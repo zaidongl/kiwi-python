@@ -3,6 +3,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def login(context, agent_name, user_name, pwd):
+    logger.info(f"Login the web site")
+    agent = context.scenario_context.get_agent(agent_name)
+
+
 @when('"{agent_name}" opens the page "{url}"')
 def open_page(context, agent_name, url):
     logger.info(f"Opening page {url} with agent {agent_name}")

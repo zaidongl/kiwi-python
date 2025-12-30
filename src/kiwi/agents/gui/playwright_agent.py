@@ -1,10 +1,12 @@
+
 import allure
-from kiwi.agents.agent import Agent
-from kiwi.config.playwright_agent_config import PlaywrightAgentConfig
 
 from playwright.sync_api import sync_playwright, expect
 import yaml
 import logging
+
+from ..agent import Agent
+from ...config.playwright_agent_config import PlaywrightAgentConfig
 
 class PlaywrightAgent(Agent):
     def __init__(self, agent_config: PlaywrightAgentConfig):
