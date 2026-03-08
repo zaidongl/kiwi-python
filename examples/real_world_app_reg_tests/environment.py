@@ -4,7 +4,7 @@ from uuid import uuid4
 from behave.model import Step
 from behave.runner import Context
 from kiwi.context.scenario_context import ScenarioContext
-from kiwi.agents.playwright_agent import PlaywrightAgent
+from kiwi.agents.gui.web.playwright_agent import PlaywrightAgent
 
 logger = logging.getLogger(__name__)
 

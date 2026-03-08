@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from kiwi.agents.api.rest.rest_agent import RestAgent
 from kiwi.utils.json_utils import JsonUtils
@@ -20,9 +20,9 @@ class TestRestAgent(unittest.TestCase):
     @patch.object(RestAgent, '_make_request')
     def test_send_request(self, mock_make_request):
         # Mock the response of _make_request for a GET request
-        mock_response = unittest.mock.Mock()
+        mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
+        mock_response.content = {
             "countryCode": "CHN",
             "population": 9996300
         }
@@ -30,8 +30,8 @@ class TestRestAgent(unittest.TestCase):
         # Test sending a GET request to a known endpoint
         result = self.rest_agent.send_request(method="GET", endpoint="city/Shanghai")
         self.assertEqual(result.status_code, 200)
-        country_code = JsonUtils.get_value(result.json(), "countryCode")
-        population = JsonUtils.get_value(result.json(), "population")
+        country_code = JsonUtils.get_value(result.content, "countryCode")
+        population = JsonUtils.get_value(result.content, "population")
         self.assertEqual(country_code, "CHN")
         self.assertEqual(population, 9996300)
 
@@ -56,11 +56,11 @@ class TestRestAgent(unittest.TestCase):
         # Mock the response for a 404 error
         mock_response = unittest.mock.Mock()
         mock_response.status_code = 404
-        mock_response.json.return_value = {"error": "Not Found"}
+        mock_response.content.return_value = {"error": "Not Found"}
         mock_make_request.return_value = mock_response
         result = self.rest_agent.send_request(method="GET", endpoint="city/NonExistent")
         self.assertEqual(result.status_code, 404)
-        error_message = JsonUtils.get_value(result.json(), "error")
+        error_message = JsonUtils.get_value(result.content(), "error")
         self.assertEqual(error_message, "Not Found")
 
     @patch.object(RestAgent, '_make_request')
@@ -68,11 +68,11 @@ class TestRestAgent(unittest.TestCase):
         # Mock the response with invalid JSON
         mock_response = unittest.mock.Mock()
         mock_response.status_code = 200
-        mock_response.json.side_effect = ValueError("Invalid JSON")
+        mock_response.content.side_effect = ValueError("Invalid JSON")
         mock_make_request.return_value = mock_response
         result = self.rest_agent.send_request(method="GET", endpoint="city/Shanghai")
         with self.assertRaises(ValueError):
-            result.json()
+            result.content()
 
 
 if __name__ == '__main__':

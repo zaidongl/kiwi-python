@@ -2,6 +2,8 @@ import os
 import yaml
 import logging
 
+from build.lib.kiwi.agents.api.rest.rest_agent import RestAgent
+from kiwi.agents.api.rest.rest_agent_config import RestAgentConfig
 from kiwi.agents.gui.web.playwright_agent_config import PlaywrightAgentConfig
 
 class Configurator(object):
@@ -40,10 +42,11 @@ class Configurator(object):
     def load_agents_config(self, config_file_path: str):
         yaml.add_representer(PlaywrightAgentConfig, PlaywrightAgentConfig.__to_yaml__)
         yaml.add_constructor('!PlaywrightAgentConfig', PlaywrightAgentConfig.__from_yaml__)
+        yaml.add_constructor('!RestAgentConfig', RestAgentConfig.__from_yaml__)
 
         with open(config_file_path, 'r') as file:
             data = yaml.load(file, Loader=yaml.FullLoader)
-            print(data)
+            self._logger.info(data)
 
         for agent_config in data:
             self._agent_configs[agent_config.get_name()] = agent_config

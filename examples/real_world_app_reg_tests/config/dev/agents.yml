@@ -7,6 +7,6 @@
     base_url: http://localhost:3000 # Base URL for the web application to be tested
 
 - !RestAgentConfig
-    name: ApiAgent
+    name: RestAgent
     timeout: 30000 # Timeout for API requests in milliseconds, default: 30000
     base_url: http://localhost:8090/ # Base URL for the API to be tested

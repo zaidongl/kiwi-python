@@ -16,8 +16,14 @@ class RestAgentConfig(AgentConfig):
     def get_name(self) -> str:
         return self.name
 
+    def set_name(self, name: str):
+        self.name = name
+
     def get_base_url(self) -> str:
         return self.base_url
+
+    def set_base_url(self, base_url: str):
+        self.base_url = base_url
 
     def get_connection_timeout(self) -> int:
         return self.connection_timeout

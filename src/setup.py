@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='kiwi',
-    version='0.1.0',
+    version='0.1.1',
     description='A Common reusable BDD test automation framework in python',
     author='zaidongl',
     long_description=open("../README.md", encoding="utf-8").read(), # 详细描述

@@ -1,5 +1,6 @@
 import logging
 
+from kiwi.agents.api.rest.rest_agent import RestAgent
 from kiwi.config.configurator import Configurator
 from kiwi.agents.gui.web.playwright_agent import PlaywrightAgent
 from kiwi.agents.gui.web.playwright_agent_config import PlaywrightAgentConfig
@@ -25,12 +26,12 @@ class AgentsManager:
             self._logger.info(f"Got agent config: {agent_config}")
 
             if agent_config is None:
-                raise Exception(f"Agent configuration for '{name}' not found.")
+                raise ArithmeticError(f"Agent configuration for '{name}' not found.")
             if isinstance(agent_config, PlaywrightAgentConfig):
                 self._agents[name] = PlaywrightAgent(agent_config)
             elif isinstance(agent_config, RestAgentConfig):
-                self._agents[name] = RestAgentConfig(agent_config)
+                self._agents[name] = RestAgent(agent_config)
             else:
-                raise Exception(f"Unsupported agent configuration type for '{name}'.")
+                raise ArithmeticError(f"Unsupported agent configuration type for '{name}'.")
 
         return self._agents.get(name)

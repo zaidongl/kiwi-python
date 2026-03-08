@@ -1,13 +1,23 @@
-from behave import when, then
+from behave import given, when, then
 import logging
 import json
 from typing import Any
 
 from kiwi.context.step_result import StepResult, StepResultStatus
 from kiwi.context.scenario_context import ScenarioContext
+from kiwi.exception.validation_error import ValidationError
+from kiwi.utils.json_utils import JsonUtils
+from kiwi.exception.path_error import PathError
 
 logger = logging.getLogger(__name__)
 
+
+@given('the REST API is configured with {rest_agent_name}')
+def configure_rest_api(context, rest_agent_name):
+    """Placeholder step to indicate REST API configuration. Agents are loaded from config."""
+    logger.info("REST API configured with rest_agent_name")
+    # Assuming agents are already loaded in scenario context from config
+    context.scenario_context.get_agent(rest_agent_name)
 
 def _get_last_response(context) -> Any:
     if not hasattr(context, 'scenario_context') or context.scenario_context is None:
@@ -40,84 +50,13 @@ def _resolve_variable(context, value: str):
     raise AssertionError(f"Variable {value} not found in scenario context")
 
 
-def _parse_json_safe(text: str):
-    try:
-        return json.loads(text)
-    except Exception:
-        return None
-
-
-def _get_json_path_value(json_obj: Any, path: str):
-    """Simple JSON path resolver supporting paths like $.a.b[0].c or a.b.c or $.a[0].b
-    This is a minimal helper (not full jsonpath support).
-    """
-    if path.startswith("$."):
-        path = path[2:]
-    if path.startswith("$"):
-        path = path[1:]
-    if path.startswith('.'):
-        path = path[1:]
-    if path == "" or path is None:
-        return json_obj
-
-    parts = []
-    # split by dot but keep array indices
-    raw_parts = path.split('.')
-    for p in raw_parts:
-        parts.append(p)
-
-    current = json_obj
-    for part in parts:
-        if current is None:
-            return None
-        # handle array index like name[0]
-        if '[' in part:
-            # e.g. items[0][1]
-            while '[' in part:
-                idx_start = part.index('[')
-                key = part[:idx_start]
-                if key:
-                    # descend into key
-                    if isinstance(current, dict) and key in current:
-                        current = current.get(key)
-                    else:
-                        return None
-                # handle index
-                idx_end = part.index(']')
-                idx = part[idx_start+1:idx_end]
-                try:
-                    i = int(idx)
-                except Exception:
-                    return None
-                if isinstance(current, list):
-                    if i < 0 or i >= len(current):
-                        return None
-                    current = current[i]
-                else:
-                    return None
-                part = part[idx_end+1:]
-            # if there's any leftover name after indexes
-            if part:
-                if isinstance(current, dict) and part in current:
-                    current = current.get(part)
-                else:
-                    return None
-        else:
-            # simple key
-            if isinstance(current, dict):
-                current = current.get(part)
-            else:
-                return None
-    return current
-
-
-@when('"{agent_name}" sends a {method} request to "{endpoint}"')
-def send_request(context, agent_name, method, endpoint):
+@when('I send a {method} request to "{endpoint}"')
+def send_request(context, method, endpoint):
     """Send an HTTP request using the configured agent. Optional request body can be provided
     in the step's docstring (context.text).
     """
-    logger.info(f"Sending {method} request to {endpoint} using agent {agent_name}")
-    agent = context.scenario_context.get_agent(agent_name)
+    logger.info(f"Sending {method} request to {endpoint}")
+    agent = context.scenario_context.get_current_agent()
     body = None
     if hasattr(context, 'text') and context.text and context.text.strip():
         # allow variable resolution in the body
@@ -128,35 +67,18 @@ def send_request(context, agent_name, method, endpoint):
             body_val = raw
         # if body_val is a dict/string etc, pass directly
         body = body_val
-    # call agent methods (RestAgent has methods like get/post that return StepResult)
-    method_upper = method.upper()
-    if method_upper == 'GET':
-        result = agent.get(endpoint)
-    elif method_upper == 'POST':
-        # if body is a string and looks like JSON, pass as body
-        result = agent.post(endpoint, body=body)
-    elif method_upper == 'PUT':
-        result = agent.put(endpoint, body=body)
-    elif method_upper == 'DELETE':
-        result = agent.delete(endpoint)
-    elif method_upper == 'PATCH':
-        result = agent.patch(endpoint, body=body)
-    else:
-        raise AssertionError(f"Unsupported HTTP method: {method}")
+    # call agent send_request method
+    result = agent.send_request(method=method, endpoint=endpoint, body=body)
+
+    # wrap the response in StepResult
+    step_result = StepResult(StepResultStatus.PASSED, f"{method} {endpoint}", result)
 
     # store last step result in scenario context
-    context.scenario_context.set_last_step_result(result)
+    context.scenario_context.set_last_step_result(step_result)
     # attach some log for reporting
-    try:
-        resp = result.data
-        if resp is not None:
-            try:
-                body_preview = resp.text[:2000]
-            except Exception:
-                body_preview = str(resp)
-            context.scenario_context.write(f"Response ({getattr(resp, 'status_code', '')}): {body_preview}")
-    except Exception:
-        pass
+    resp = result
+    if resp is not None:
+        context.scenario_context.write(f"Response ({getattr(resp, 'status_code', '')}): {resp.content}")
 
 
 @then('the response status code should be {expected:d}')
@@ -216,12 +138,18 @@ def assert_json_path_equals(context, json_path, expected):
         text = response.text
     except Exception:
         text = None
-    json_obj = _parse_json_safe(text)
-    if json_obj is None:
+    try:
+        json_obj = JsonUtils.from_string(text)
+    except ValueError:
         msg = "Response body is not valid JSON"
         context.scenario_context.write(msg)
         raise AssertionError(msg)
-    val = _get_json_path_value(json_obj, json_path)
+    try:
+        val = JsonUtils.get(json_obj, json_path)
+    except PathError:
+        msg = f"JSON path '{json_path}' not found"
+        context.scenario_context.write(msg)
+        raise AssertionError(msg)
     # resolve expected variable reference
     try:
         expected_val = _resolve_variable(context, expected)
@@ -246,14 +174,19 @@ def save_json_path_as_variable(context, json_path, var_name):
         text = response.text
     except Exception:
         text = None
-    json_obj = _parse_json_safe(text)
-    if json_obj is None:
+    try:
+        json_obj = JsonUtils.from_string(text)
+    except ValueError:
         msg = "Response body is not valid JSON"
         context.scenario_context.write(msg)
         raise AssertionError(msg)
-    val = _get_json_path_value(json_obj, json_path)
+    try:
+        val = JsonUtils.get(json_obj, json_path)
+    except PathError:
+        msg = f"JSON path '{json_path}' not found"
+        context.scenario_context.write(msg)
+        raise AssertionError(msg)
     # store as StepResult for consistency with ScenarioContext variable usage
     sc: ScenarioContext = context.scenario_context
     sc.set_variable(var_name, StepResult(StepResultStatus.PASSED, message=f"Stored JSON path {json_path}", data=val))
     context.scenario_context.write(f"Saved JSON path '{json_path}' as variable '{var_name}': {val}")
-

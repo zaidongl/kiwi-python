@@ -149,3 +149,114 @@ class JsonUtils:
         val = JsonUtils.get(data, path)
         if val != expected_value:
             raise ValidationError(f"expected value {expected_value} at '{path}' but found {val}")
+
+    @staticmethod
+    def _set(data: Dict[str, Any], path: str, value: Any) -> None:
+        """Internal helper to set a value at the path, creating intermediate structures if needed."""
+        if not path:
+            raise ValueError("Cannot set value at root path")
+
+        segments = path.split('.')
+        current: Any = data
+
+        for raw_seg in segments[:-1]:
+            key, idx = JsonUtils._parse_segment(raw_seg)
+            if idx is not None:
+                if not isinstance(current, dict):
+                    raise PathError(f"Expected dict at segment '{raw_seg}' for path '{path}'")
+                if key not in current:
+                    current[key] = []
+                current = current[key]
+                if not isinstance(current, list):
+                    raise PathError(f"Expected list at '{key}' for path '{path}'")
+                while len(current) <= idx:
+                    current.append({})
+                current = current[idx]
+            else:
+                if not isinstance(current, dict):
+                    raise PathError(f"Expected dict at segment '{raw_seg}' for path '{path}'")
+                if key not in current:
+                    current[key] = {}
+                current = current[key]
+
+        # Set the last segment
+        last_seg = segments[-1]
+        key, idx = JsonUtils._parse_segment(last_seg)
+        if idx is not None:
+            if not isinstance(current, dict):
+                raise PathError(f"Expected dict at segment '{last_seg}' for path '{path}'")
+            if key not in current:
+                current[key] = []
+            current = current[key]
+            if not isinstance(current, list):
+                raise PathError(f"Expected list at '{key}' for path '{path}'")
+            while len(current) <= idx:
+                current.append(None)
+            current[idx] = value
+        else:
+            if not isinstance(current, dict):
+                raise PathError(f"Expected dict at segment '{last_seg}' for path '{path}'")
+            current[key] = value
+
+    @staticmethod
+    def add_value(data: Dict[str, Any], path: str, value: Any) -> None:
+        """Add or set a value at the given path, creating intermediate structures if needed."""
+        JsonUtils._set(data, path, value)
+
+    @staticmethod
+    def update_value(data: Dict[str, Any], path: str, value: Any) -> None:
+        """Update the value at the given path if it exists, otherwise raise PathError."""
+        if not JsonUtils.exists(data, path):
+            raise PathError(f"Path '{path}' does not exist, cannot update")
+        JsonUtils._set(data, path, value)
+
+    @staticmethod
+    def remove_value(data: Dict[str, Any], path: str) -> None:
+        """Remove the value at the given path if it exists."""
+        if not path:
+            raise ValueError("Cannot remove root path")
+
+        segments = path.split('.')
+        current: Any = data
+
+        for raw_seg in segments[:-1]:
+            key, idx = JsonUtils._parse_segment(raw_seg)
+            if idx is not None:
+                if not isinstance(current, dict):
+                    raise PathError(f"Expected dict at segment '{raw_seg}' for path '{path}'")
+                if key not in current:
+                    raise PathError(f"Path '{path}' not found: missing key '{key}'")
+                current = current[key]
+                if not isinstance(current, list):
+                    raise PathError(f"Expected list at '{key}' for path '{path}'")
+                if idx >= len(current):
+                    raise PathError(f"Path '{path}' not found: index {idx} out of range")
+                current = current[idx]
+            else:
+                if not isinstance(current, dict):
+                    raise PathError(f"Expected dict at segment '{raw_seg}' for path '{path}'")
+                if key not in current:
+                    raise PathError(f"Path '{path}' not found: missing key '{key}'")
+                current = current[key]
+
+        # Remove the last segment
+        last_seg = segments[-1]
+        key, idx = JsonUtils._parse_segment(last_seg)
+        if idx is not None:
+            if not isinstance(current, dict):
+                raise PathError(f"Expected dict at segment '{last_seg}' for path '{path}'")
+            if key not in current:
+                raise PathError(f"Path '{path}' not found: missing key '{key}'")
+            current = current[key]
+            if not isinstance(current, list):
+                raise PathError(f"Expected list at '{key}' for path '{path}'")
+            if idx >= len(current):
+                raise PathError(f"Path '{path}' not found: index {idx} out of range")
+            del current[idx]
+        else:
+            if not isinstance(current, dict):
+                raise PathError(f"Expected dict at segment '{last_seg}' for path '{path}'")
+            if key not in current:
+                raise PathError(f"Path '{path}' not found: missing key '{key}'")
+            del current[key]
+
