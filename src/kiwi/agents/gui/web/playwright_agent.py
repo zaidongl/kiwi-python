@@ -6,7 +6,7 @@ import yaml
 import logging
 
 from kiwi.agents.agent import Agent
-from kiwi.config.playwright_agent_config import PlaywrightAgentConfig
+from kiwi.agents.gui.web.playwright_agent_config import PlaywrightAgentConfig
 
 class PlaywrightAgent(Agent):
     def __init__(self, agent_config: PlaywrightAgentConfig):

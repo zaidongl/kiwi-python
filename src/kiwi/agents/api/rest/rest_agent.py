@@ -4,9 +4,10 @@ from typing import Dict, Optional, Any
 import requests
 
 from kiwi.agents.agent import Agent
-from kiwi.config.rest_agent_config import RestAgentConfig
-from kiwi.context.step_result import StepResult, StepResultStatus
+from kiwi.agents.api.rest.rest_agent_config import RestAgentConfig
+from kiwi.exception.argument_error import ArgumentError
 from kiwi.security.auth.BearerToken import BearerToken
+from kiwi.security.auth.basic_auth import BasicAuth
 
 
 class RestAgent(Agent):
@@ -21,7 +22,7 @@ class RestAgent(Agent):
         self._logger.info(f"Initialized RestAgent with config: {agent_config}")
 
     def send_request(self, method: str, endpoint: str, headers: Optional[Dict[str, str]] = None,
-                     params: Optional[Dict[str, Any]] = None, body: Optional[Dict[str, Any]] = None) -> StepResult:
+                     params: Optional[Dict[str, Any]] = None, body: Optional[Dict[str, Any]] = None) -> Optional[requests.Response]:
         """
         Send HTTP request using the specified method, headers, params and body to the given endpoint.
         Args:
@@ -44,6 +45,11 @@ class RestAgent(Agent):
                 auth = self._agent_config.get_request_auth()
                 if isinstance(auth, BearerToken):
                     headers = {'Authorization': f'Bearer {auth.get_token()}'}
+                elif isinstance(auth, BasicAuth):
+                    request_kwargs['auth'] = (auth.get_username(), auth.get_password())
+                else:
+                    self._logger.error(f"Unsupported authentication type: {type(auth)}")
+                    raise ArgumentError(f"Unsupported authentication type: {type(auth)}")
 
             if self._agent_config.get_headers():
                 if headers is None:
@@ -65,17 +71,21 @@ class RestAgent(Agent):
             response = self._make_request(method.upper(), full_url, **request_kwargs)
 
             if response is None:
-                return StepResult(StepResultStatus.FAILED, message="No response received.", data=None)
+                self._logger.warning("No response received from the server.")
+                return None
 
             self._logger.info(f"Received response: {response.status_code} - {response.text}")
-            return StepResult(StepResultStatus.PASSED, message="Request successful.", data=response)
+            return response
 
-        except requests.exceptions.RequestException as e:
-            self._logger.error(f"RequestException during {method} request to {endpoint}: {e}")
-            return StepResult(StepResultStatus.FAILED, message=str(e), data=None)
+        except ConnectionError as e:
+            self._logger.error(f"ConnectionError during {method} request to {endpoint}: {e}")
+            raise e
+        except TimeoutError as e:
+            self._logger.error(f"TimeoutError during {method} request to {endpoint}: {e}")
+            raise e
         except Exception as e:
             self._logger.error(f"Exception during {method} request to {endpoint}: {e}")
-            return StepResult(StepResultStatus.FAILED, message=str(e), data=None)
+            raise e
 
     def _make_request(self, method: str, url: str, **kwargs) -> Optional[requests.Response]:
         """
@@ -100,27 +110,7 @@ class RestAgent(Agent):
                 return session.patch(url, **kwargs)
             else:
                 self._logger.error(f"Unsupported HTTP method: {method}")
-                return None
+                raise ArgumentError(f"Unsupported HTTP method: {method}")
         except Exception as e:
             self._logger.error(f"Error making {method} request to {url}: {e}")
             return None
-
-    def get(self, url: str, headers: Optional[Dict[str, str]] = None,
-            params: Optional[Dict[str, Any]] = None) -> StepResult:
-        return self.send_request("GET", url, headers=headers, params=params)
-
-    def post(self, url: str, headers: Optional[Dict[str, str]] = None,
-            params: Optional[Dict[str, Any]] = None, body: Optional[Dict[str, Any]] = None) -> StepResult:
-        return self.send_request("POST", url, headers=headers, params=params, body=body)
-
-    def put(self, url: str, headers: Optional[Dict[str, str]] = None,
-            params: Optional[Dict[str, Any]] = None, body: Optional[Dict[str, Any]] = None) -> StepResult:
-        return self.send_request("PUT", url, headers=headers, params=params, body=body)
-
-    def delete(self, url: str, headers: Optional[Dict[str, str]] = None,
-             params: Optional[Dict[str, Any]] = None) -> StepResult:
-        return self.send_request("DELETE", url, headers=headers, params=params)
-
-    def patch(self, url: str, headers: Optional[Dict[str, str]] = None,
-            params: Optional[Dict[str, Any]] = None, body: Optional[Dict[str, Any]] = None) -> StepResult:
-        return self.send_request("PATCH", url, headers=headers, params=params, body=body)

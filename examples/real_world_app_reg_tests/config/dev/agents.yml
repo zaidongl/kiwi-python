@@ -5,3 +5,8 @@
     timeout: 30000 # Timeout for browser operations in milliseconds, default: 30000
     element_repo: web-gui-repo/web-pages.yml # Path to the element repository file
     base_url: http://localhost:3000 # Base URL for the web application to be tested
+
+- !RestAgentConfig
+    name: ApiAgent
+    timeout: 30000 # Timeout for API requests in milliseconds, default: 30000
+    base_url: http://localhost:8090/ # Base URL for the API to be tested

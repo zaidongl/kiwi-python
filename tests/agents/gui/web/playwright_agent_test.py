@@ -2,7 +2,7 @@ import os
 import unittest
 
 from kiwi.agents.playwright_agent import PlaywrightAgent
-from kiwi.config.playwright_agent_config import PlaywrightAgentConfig
+from kiwi.agents.gui.web.playwright_agent_config import PlaywrightAgentConfig
 
 class TestPlaywrightAgent(unittest.TestCase):
     def test_load_element_repo(self):

@@ -1,8 +1,8 @@
 import pytest
 
 from kiwi.utils.json_utils import JsonUtils
-from kiwi.errors.path_error import PathError
-from kiwi.errors.validation_error import ValidationError
+from kiwi.exception.path_error import PathError
+from kiwi.exception.validation_error import ValidationError
 
 
 def test_get_and_exists_basic():

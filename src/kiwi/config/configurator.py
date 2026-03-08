@@ -2,7 +2,7 @@ import os
 import yaml
 import logging
 
-from kiwi.config.playwright_agent_config import PlaywrightAgentConfig
+from kiwi.agents.gui.web.playwright_agent_config import PlaywrightAgentConfig
 
 class Configurator(object):
     _logger = logging.getLogger(__name__)

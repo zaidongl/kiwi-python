@@ -1,5 +1,5 @@
-from .agent_config import AgentConfig
-from ..security.auth.http_request_auth import HttpRequestAuth
+from kiwi.config.agent_config import AgentConfig
+from kiwi.security.auth.http_request_auth import HttpRequestAuth
 
 class RestAgentConfig(AgentConfig):
     def __init__(self, name: str, base_url: str, connection_timeout: int = 30000, request_auth: HttpRequestAuth = None,

@@ -9,8 +9,8 @@ Also provides simple constructors to load JSON from a string or file.
 from typing import Any, Dict, Optional, Tuple, Union
 import json
 
-from kiwi.errors.path_error import PathError
-from kiwi.errors.validation_error import ValidationError
+from kiwi.exception.path_error import PathError
+from kiwi.exception.validation_error import ValidationError
 
 
 class JsonUtils:

@@ -1,9 +1,9 @@
 import logging
 
 from kiwi.config.configurator import Configurator
-from kiwi.agents.gui.playwright_agent import PlaywrightAgent
-from kiwi.config.playwright_agent_config import PlaywrightAgentConfig
-from ..config.rest_agent_config import RestAgentConfig
+from kiwi.agents.gui.web.playwright_agent import PlaywrightAgent
+from kiwi.agents.gui.web.playwright_agent_config import PlaywrightAgentConfig
+from kiwi.agents.api.rest.rest_agent_config import RestAgentConfig
 
 class AgentsManager:
     _logger = logging.getLogger(__name__)
