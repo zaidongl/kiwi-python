@@ -1,14 +1,15 @@
 import logging
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List
 
 import requests
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from kiwi.agents.agent import Agent
 from kiwi.agents.api.rest.rest_agent_config import RestAgentConfig
 from kiwi.exception.argument_error import ArgumentError
 from kiwi.security.auth.BearerToken import BearerToken
 from kiwi.security.auth.basic_auth import BasicAuth
-
 
 class RestAgent(Agent):
     """
@@ -68,7 +69,16 @@ class RestAgent(Agent):
             if self._agent_config.get_cookies():
                 request_kwargs['cookies'] = self._agent_config.get_cookies()
 
+            start_ts = time.perf_counter()
             response = self._make_request(method.upper(), full_url, **request_kwargs)
+            elapsed_ms = int((time.perf_counter() - start_ts) * 1000)
+            # Attach elapsed time to response for callers
+            if response is not None:
+                try:
+                    setattr(response, 'kiwi_elapsed_ms', elapsed_ms)
+                except Exception:
+                    # ignore if attribute cannot be set
+                    pass
 
             if response is None:
                 self._logger.warning("No response received from the server.")
@@ -114,3 +124,74 @@ class RestAgent(Agent):
         except Exception as e:
             self._logger.error(f"Error making {method} request to {url}: {e}")
             return None
+
+    def send_requests_parallel(self, method: str, requests_data: List[Any], max_workers: int = 5) -> List[Optional[requests.Response]]:
+        """
+        Send multiple HTTP requests in parallel using threads.
+
+        Args:
+            method: HTTP method to use for all requests (GET, POST, ...)
+            requests_data: A list where each item is either:
+                - a string representing the endpoint (will be appended to base_url), or
+                - a dict with keys: 'endpoint' (required), and optional 'headers', 'params', 'body'.
+            max_workers: maximum number of threads to use.
+
+        Returns:
+            A list of requests.Response objects or None for requests that failed. The order of the
+            returned list matches the order of the supplied requests_data.
+        """
+        if not requests_data:
+            return []
+
+        # Normalize inputs: convert simple endpoint strings to dicts
+        normalized: List[Dict[str, Any]] = []
+        for item in requests_data:
+            if isinstance(item, str):
+                normalized.append({'endpoint': item})
+            elif isinstance(item, dict):
+                if 'endpoint' not in item:
+                    raise ArgumentError("Each request dict must include an 'endpoint' key")
+                normalized.append(item)
+            else:
+                raise ArgumentError("requests_data items must be either endpoint strings or dicts")
+
+        worker_count = max(1, min(len(normalized), int(max_workers)))
+        self._logger.info(f"Starting parallel requests: method={method}, count={len(normalized)}, workers={worker_count}")
+
+        results: List[Optional[requests.Response]] = [None] * len(normalized)
+
+        def _worker(idx: int, req: Dict[str, Any]) -> None:
+            try:
+                endpoint = req.get('endpoint')
+                headers = req.get('headers')
+                params = req.get('params')
+                body = req.get('body')
+                self._logger.debug(f"Thread starting request idx={idx} endpoint={endpoint}")
+                start_ts = time.perf_counter()
+                resp = self.send_request(method, endpoint, headers=headers, params=params, body=body)
+                elapsed_ms = int((time.perf_counter() - start_ts) * 1000)
+                # ensure elapsed is available on the response object (overwrites if already set)
+                if resp is not None:
+                    try:
+                        setattr(resp, 'kiwi_elapsed_ms', elapsed_ms)
+                    except Exception:
+                        pass
+                results[idx] = resp
+                self._logger.debug(f"Thread finished request idx={idx} status={(resp.status_code if resp is not None else None)} elapsed_ms={elapsed_ms}")
+            except Exception as e:
+                self._logger.error(f"Exception in parallel request idx={idx} endpoint={req.get('endpoint')}: {e}")
+                results[idx] = None
+
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            futures = [executor.submit(_worker, idx, req) for idx, req in enumerate(normalized)]
+            # Wait for all futures to complete and log exceptions if any
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    # Exceptions are already logged in _worker, but log here as well for visibility
+                    self._logger.error(f"Unhandled exception in future: {e}")
+
+        self._logger.info("Parallel requests completed")
+        return results
+

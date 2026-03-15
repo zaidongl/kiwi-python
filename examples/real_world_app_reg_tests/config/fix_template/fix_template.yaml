@@ -1,0 +1,117 @@
+templates:
+  NewOrderSingle:
+	# BeginString (8) and BodyLength (9) are added by the builder
+	header:
+	  - [35, D]
+	body:
+	  - tag: 11
+		name: ClOrdID
+		required: true
+		value: "{clordid}"
+	  - tag: 55
+		name: Symbol
+		required: true
+		value: "{symbol}"
+	  - tag: 54
+		name: Side
+		required: true
+		value: "{side}"
+	  - tag: 38
+		name: OrderQty
+		value: "{quantity}"
+	  - tag: 40
+		name: OrdType
+		value: "{ord_type}"
+	  - tag: 44
+		name: Price
+		value: "{price}"
+	  - tag: 453
+		name: NoPartyIDs
+		repeating: true
+		group:
+		  - tag: 448
+			name: PartyID
+			value: "{party_id}"
+		  - tag: 447
+			name: PartyIDSource
+			value: "{party_src}"
+		  - tag: 452
+			name: PartyRole
+			value: "{party_role}"
+
+  OrderCancelRequest:
+	header:
+	  - [35, F]
+	body:
+	  - tag: 11
+		name: ClOrdID
+		required: true
+		value: "{clordid}"
+	  - tag: 41
+		name: OrigClOrdID
+		required: true
+		value: "{orig_clordid}"
+	  - tag: 55
+		name: Symbol
+		required: true
+		value: "{symbol}"
+	  - tag: 54
+		name: Side
+		required: true
+		value: "{side}"
+	  - tag: 60
+		name: TransactTime
+		value: "{transact_time}"
+
+  ExecutionReport:
+	header:
+	  - [35, 8]
+	body:
+	  - tag: 37
+		name: OrderID
+		value: "{order_id}"
+	  - tag: 11
+		name: ClOrdID
+		value: "{clordid}"
+	  - tag: 17
+		name: ExecID
+		required: true
+		value: "{execid}"
+	  - tag: 150
+		name: ExecType
+		value: "{exectype}"
+	  - tag: 39
+		name: OrdStatus
+		value: "{ordstatus}"
+	  - tag: 55
+		name: Symbol
+		value: "{symbol}"
+	  - tag: 54
+		name: Side
+		value: "{side}"
+	  - tag: 38
+		name: OrderQty
+		value: "{orderqty}"
+	  - tag: 32
+		name: LastQty
+		value: "{lastqty}"
+	  - tag: 31
+		name: LastPx
+		value: "{lastpx}"
+	  - tag: 151
+		name: LeavesQty
+		value: "{leavesqty}"
+	  - tag: 453
+		name: NoPartyIDs
+		repeating: true
+		group:
+		  - tag: 448
+			name: PartyID
+			value: "{party_id}"
+		  - tag: 447
+			name: PartyIDSource
+			value: "{party_src}"
+		  - tag: 452
+			name: PartyRole
+			value: "{party_role}"
+

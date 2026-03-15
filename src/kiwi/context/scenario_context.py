@@ -1,6 +1,7 @@
 import logging
-from typing import Dict
+from typing import Dict, Any, Optional
 
+import json
 import allure
 from behave.model import Scenario
 from kiwi.agents.AgentsManager import AgentsManager
@@ -31,6 +32,35 @@ class ScenarioContext(object):
             name="Log Output",
             attachment_type=allure.attachment_type.TEXT
         )
+
+    def attach_allure(self, name: str, data: Any, as_json: bool = True, max_text_length: Optional[int] = None) -> None:
+        """
+        Attach data to Allure report, preferring JSON when possible and falling back to text.
+
+        Args:
+            name: attachment name
+            data: python object or string to attach
+            as_json: attempt to serialize to JSON when True
+            max_text_length: optional max length for text attachments; truncate if provided
+        """
+        try:
+            if as_json:
+                try:
+                    payload = json.dumps(data, indent=2, default=str)
+                    allure.attach(payload, name=name, attachment_type=allure.attachment_type.JSON)
+                    return
+                except Exception:
+                    # fallthrough to text attach
+                    pass
+
+            # text attach fallback
+            text = data if isinstance(data, str) else str(data)
+            if max_text_length is not None and len(text) > max_text_length:
+                text = text[:max_text_length] + "... (truncated)"
+            allure.attach(body=text, name=name, attachment_type=allure.attachment_type.TEXT)
+        except Exception as e:
+            # Ensure attachment failures do not break test execution; log for diagnostics
+            self._logger.debug(f"Failed to attach to Allure: {e}")
 
     def set_variable(self, name: str, value: StepResult):
         self.variables[name] = value
